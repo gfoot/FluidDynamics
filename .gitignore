@@ -2,3 +2,4 @@
 *.sln
 *.pidb
 Temp
+*.userprefs

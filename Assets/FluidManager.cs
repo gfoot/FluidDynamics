@@ -7,16 +7,24 @@ public class FluidManager : MonoBehaviour
 
     public float viscosity = 0.001f;
     public float damping = 0.9f;
+    public float endpointImpedence = 1.0f;
 
     private float _peakVolume = 0.0f;
     private float _volume = 0.0f;
 
-    private FluidColumn[] _fluidColumns;
+    private float[] _heights;
+    private float[] _velocities;
+
+    private Transform[] _transforms;
+
+    private bool _fixColumn0Height;
 
 	// Use this for initialization
 	void Start()
     {
-        _fluidColumns = new FluidColumn[width];
+        _heights = new float[width];
+        _velocities = new float[width];
+        _transforms = new Transform[width];
 
         for (int i = 0; i < width; ++i)
         {
@@ -28,42 +36,75 @@ public class FluidManager : MonoBehaviour
 
             obj.transform.position = new Vector3(i, 0, 0);
 
-            _fluidColumns[i] = obj.AddComponent<FluidColumn>();
-            _fluidColumns[i].Manager = this;
+            _transforms[i] = obj.transform;
 
-            if (i > 0)
-            {
-                _fluidColumns[i]._neighbours[0] = _fluidColumns[i-1];
-                _fluidColumns[i-1]._neighbours[1] = _fluidColumns[i];
-            }
+            _heights[i] = 2.0f;
+            _velocities[i] = 0.0f;
         }
 
-        for (int i = 0; i < width; ++i)
-        {
-            _fluidColumns[i].height = 2.0f;
-        }
+        _fixColumn0Height = true;
+    }
 
-        _fluidColumns[0].isFixedHeight = true;
-        //_fluidColumns[width-1].impedence = 0.9f;
+    void FixedUpdate()
+    {
+        CreateWave();
+
+        UpdateVelocities();
+        UpdatePositions();
     }
 
     void Update()
     {
-        CreateWave();
-
         UpdateVolume();
+
+        UpdateVisuals();
+    }
+
+    void UpdateVelocities()
+    {
+        for (int i = 0; i < width; ++i)
+        {
+            for (int di = -1; di <= 1; di += 2)
+            {
+                int other_i = i + di;
+                if (other_i < 0 || other_i >= width)
+                    continue;
+
+                float delta = _heights[other_i] - _heights[i];
+                _velocities[i] += delta * viscosity;
+            }
+        }
+    }
+
+    void UpdatePositions()
+    {
+        for (int i = 0; i < width; ++i)
+        {
+            _heights[i] += _velocities[i];
+            _velocities[i] *= damping;
+        }
+
+        _velocities[width-1] *= endpointImpedence;
     }
 
     void UpdateVolume()
     {
         _volume = 0;
-        foreach (var fluidColumn in _fluidColumns)
+        foreach (var height in _heights)
         {
-            _volume += fluidColumn.height;
+            _volume += height;
         }
         if (_volume > _peakVolume)
         {
             _peakVolume = _volume;
+        }
+    }
+
+    void UpdateVisuals()
+    {
+        for (int i = 0; i < width; ++i)
+        {
+            _transforms[i].localScale = new Vector3(1, _heights[i] * 2, 1);
         }
     }
 
@@ -74,7 +115,7 @@ public class FluidManager : MonoBehaviour
 
     void CreateWave()
     {
-        if (!_fluidColumns[0].isFixedHeight)
+        if (!_fixColumn0Height)
             return;
 
         float lambda = (UnityEngine.Time.realtimeSinceStartup - 1) / 0.2f;
@@ -98,8 +139,8 @@ public class FluidManager : MonoBehaviour
         else
         {
             height = 0;
-            _fluidColumns[0].isFixedHeight = false;
+            _fixColumn0Height = false;
         }
-        _fluidColumns[0].height = 2.0f + 3.0f * height;
+        _heights[0] = 2.0f + 3.0f * height;
     }
 }
