@@ -8,6 +8,9 @@ public class FluidManager : MonoBehaviour
     public float viscosity = 0.001f;
     public float damping = 0.9f;
 
+    private float _peakVolume = 0.0f;
+    private float _volume = 0.0f;
+
     private FluidColumn[] _fluidColumns;
 
 	// Use this for initialization
@@ -41,11 +44,39 @@ public class FluidManager : MonoBehaviour
         }
 
         _fluidColumns[0].isFixedHeight = true;
-        _fluidColumns[width-1].impedence = 0.5f;
+        //_fluidColumns[width-1].impedence = 0.9f;
     }
 
     void Update()
     {
+        CreateWave();
+
+        UpdateVolume();
+    }
+
+    void UpdateVolume()
+    {
+        _volume = 0;
+        foreach (var fluidColumn in _fluidColumns)
+        {
+            _volume += fluidColumn.height;
+        }
+        if (_volume > _peakVolume)
+        {
+            _peakVolume = _volume;
+        }
+    }
+
+    void OnGUI()
+    {
+        GUI.Label(new Rect(50, 50, 200, 20), string.Format("Volume: {0:0.0000}", _volume));//(_volume - _peakVolume) / _peakVolume));
+    }
+
+    void CreateWave()
+    {
+        if (!_fluidColumns[0].isFixedHeight)
+            return;
+
         float lambda = (UnityEngine.Time.realtimeSinceStartup - 1) / 0.2f;
         float height;
         if (lambda < 0)
@@ -67,6 +98,7 @@ public class FluidManager : MonoBehaviour
         else
         {
             height = 0;
+            _fluidColumns[0].isFixedHeight = false;
         }
         _fluidColumns[0].height = 2.0f + 3.0f * height;
     }

@@ -21,8 +21,7 @@ public class FluidColumn : MonoBehaviour
             {
                 float delta = neighbour.height - height;
                 float amountToTransfer = delta * Manager.viscosity;
-                deltaHeight += amountToTransfer/2;
-                neighbour.deltaHeight -= amountToTransfer/2;
+                deltaHeight += amountToTransfer;
             }
         }
 	}
