@@ -1,0 +1,4 @@
+*.csproj
+*.sln
+*.pidb
+Temp
