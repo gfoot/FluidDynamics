@@ -14,24 +14,27 @@ public class FluidManager : MonoBehaviour
 
     private FluidSimulation _simulation;
 
-	void Start()
+    void Start()
     {
         _simulation = new FluidSimulation(width, fluidSettings);
-
+        
         GetComponent<FluidRenderer>().Init(_simulation);
-
-        for (int i = 0; i < width; ++i)
+        
+        for (int y = 0; y < width; ++y)
         {
-            _simulation.AddWater(i, 2.0f);
+            for (int x = 0; x < width; ++x)
+            {
+                _simulation.AddWater(x, y, 2.0f);
+            }
         }
-
+        
         _fixColumn0Height = true;
     }
 
     void FixedUpdate()
     {
         CreateWave();
-
+        
         _simulation.Update();
     }
 
@@ -43,9 +46,12 @@ public class FluidManager : MonoBehaviour
     void UpdateVolume()
     {
         _volume = 0;
-        for (int i = 0; i < width; ++i)
+        for (int y = 0; y < width; ++y)
         {
-            _volume += _simulation.GetHeight(i);
+            for (int x = 0; x < width; ++x)
+            {
+                _volume += _simulation.GetHeight(x, y);
+            }
         }
         if (_volume > _peakVolume)
         {
@@ -55,20 +61,22 @@ public class FluidManager : MonoBehaviour
 
     void OnGUI()
     {
-        GUI.Label(new Rect(50, 50, 200, 20), string.Format("Volume: {0:0.0000}", _volume));//(_volume - _peakVolume) / _peakVolume));
+        GUI.Label(new Rect(50, 50, 200, 20), string.Format("Volume: {0:0.0000}", _volume));
+        //(_volume - _peakVolume) / _peakVolume));
     }
 
     void CreateWave()
     {
         if (!_fixColumn0Height)
             return;
-
+        
         float lambda = (UnityEngine.Time.realtimeSinceStartup - 1) / 0.2f;
         float height;
         if (lambda < 0)
         {
             height = 0;
         }
+
         else if (lambda < 1)
         {
             height = lambda;
@@ -79,13 +87,14 @@ public class FluidManager : MonoBehaviour
         }
         else if (lambda < 5)
         {
-            height = 5-lambda;
+            height = 5 - lambda;
         }
         else
         {
             height = 0;
             _fixColumn0Height = false;
         }
-        _simulation.AddWater(0, height);
+        
+        _simulation.AddWater(0, 0, height * 20);
     }
 }

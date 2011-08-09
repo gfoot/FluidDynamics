@@ -11,33 +11,40 @@ public class SurfaceFluidRenderer : FluidRenderer
         _simulation = simulation;
         _mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = _mesh;
-
-        int numVerts = 2 * _simulation.Width;
-        int numTris = 2 * (_simulation.Width - 1);
-
+        
+        int numVerts = _simulation.Width * _simulation.Width;
+        int numTris = 2 * (_simulation.Width - 1) * (_simulation.Width - 1);
+        
         Vector3[] newVertices = new Vector3[numVerts];
         Vector2[] newUV = new Vector2[numVerts];
         Vector3[] newNormals = new Vector3[numVerts];
-
-        int[] indices = new int[numTris*3];
-
-        for (int i = 0; i < numVerts; ++i)
+        
+        int[] indices = new int[numTris * 3];
+        
+        for (int y = 0; y < _simulation.Width; ++y)
         {
-            newVertices[i] = new Vector3(0, 0, 0);
-            newUV[i] = new Vector2(0, 0);
-            newNormals[i] = new Vector3(0, 1, 0);
+            for (int x = 0; x < _simulation.Width; ++x)
+            {
+                int vbase = x + y * _simulation.Width;
+                newVertices[vbase] = new Vector3(0, 0, 0);
+                newUV[vbase] = new Vector2(0, 0);
+                newNormals[vbase] = new Vector3(0, 1, 0);
+            }
         }
-
-        for (int i = 0; i < _simulation.Width-1; ++i)
+        
+        for (int y = 0; y < _simulation.Width - 1; ++y)
         {
-            int vbase = 2*i;
-            int ibase = 6*i;
-            indices[ibase] = vbase;
-            indices[ibase+1] = vbase+1;
-            indices[ibase+2] = vbase+2;
-            indices[ibase+3] = vbase+3;
-            indices[ibase+4] = vbase+2;
-            indices[ibase+5] = vbase+1;
+            for (int x = 0; x < _simulation.Width - 1; ++x)
+            {
+                int vbase = x + y * _simulation.Width;
+                int ibase = 6 * (x + y * (_simulation.Width-1));
+                indices[ibase] = vbase;
+                indices[ibase + 1] = vbase + _simulation.Width;
+                indices[ibase + 2] = vbase + 1;
+                indices[ibase + 3] = vbase + _simulation.Width + 1;
+                indices[ibase + 4] = vbase + 1;
+                indices[ibase + 5] = vbase + _simulation.Width;
+            }
         }
 
         _mesh.vertices = newVertices;
@@ -50,29 +57,39 @@ public class SurfaceFluidRenderer : FluidRenderer
     {
         Vector3[] newVertices = _mesh.vertices;
         Vector3[] newNormals = _mesh.normals;
-
-        for (int i = 0; i < _simulation.Width; ++i)
+        
+        for (int y = 0; y < _simulation.Width; ++y)
         {
-            int vbase = 2*i;
+            for (int x = 0; x < _simulation.Width; ++x)
+            {
+                int vbase = x + y * _simulation.Width;
+                
+                newVertices[vbase] = new Vector3(x, _simulation.GetHeight(x, y) * 2, y);
 
-            newVertices[vbase] = new Vector3(i, _simulation.GetHeight(i) * 2, 0);
-            newVertices[vbase+1] = newVertices[vbase] + new Vector3(0, 0, 100);
+                float gradient_x;
+                if (x == 0)
+                    gradient_x = _simulation.GetHeight(x + 1, y) - _simulation.GetHeight(x, y);
+                else if (x == _simulation.Width - 1)
+                    gradient_x = _simulation.GetHeight(x, y) - _simulation.GetHeight(x - 1, y);
+                else
+                    gradient_x = (_simulation.GetHeight(x + 1, y) - _simulation.GetHeight(x, y)) / 2;
 
-            float gradient;
-            if (i == 0)
-                gradient = _simulation.GetHeight(i+1) - _simulation.GetHeight(i);
-            else if (i == _simulation.Width - 1)
-                gradient = _simulation.GetHeight(i) - _simulation.GetHeight(i-1);
-            else
-                gradient = (_simulation.GetHeight(i+1) - _simulation.GetHeight(i)) / 2;
+                float gradient_y;
+                if (y == 0)
+                    gradient_y = _simulation.GetHeight(x, y + 1) - _simulation.GetHeight(x, y);
+                else if (y == _simulation.Height - 1)
+                    gradient_y = _simulation.GetHeight(x, y) - _simulation.GetHeight(x, y - 1);
+                else
+                    gradient_y = (_simulation.GetHeight(x, y + 1) - _simulation.GetHeight(x, y - 1)) / 2;
 
-            Vector3 normal = new Vector3(-gradient*2, 1.0f, 0);
-            normal.Normalize();
+                Vector3 normal = new Vector3(-gradient_x * 2, 1.0f, -gradient_y * 2);
+                normal.Normalize();
 
-            newNormals[vbase] = newNormals[vbase+1] = normal;
+                newNormals[vbase] = normal;
+            }
         }
-
+        
         _mesh.vertices = newVertices;
         _mesh.normals = newNormals;
-	}
+    }
 }

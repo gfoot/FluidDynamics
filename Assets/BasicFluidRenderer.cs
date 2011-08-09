@@ -31,7 +31,7 @@ public class BasicFluidRenderer : FluidRenderer
     {
         for (int i = 0; i < _transforms.Length; ++i)
         {
-            _transforms[i].localScale = new Vector3(1, _simulation.GetHeight(i) * 2, 1);
+            _transforms[i].localScale = new Vector3(1, _simulation.GetHeight(i, 0) * 2, 1);
         }
     }
 }
