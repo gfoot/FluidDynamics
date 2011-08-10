@@ -7,18 +7,13 @@ public class FluidSimulation
     [Serializable]
     public class Settings
     {
-        public float viscosity;
-        public float damping;
-        public float endpointImpedence;
+        public float viscosity = 0.05f;
+        public float shallowViscosity = 0.45f;
+        public float shallownessScale = 1.0f;
+        public float damping = 4.0f;
+        public float endpointImpedence = 1.0f;
 
-        public static Settings Default = new Settings(0.1f, 0.999f, 1.0f);
-
-        public Settings(float viscosity, float damping, float endpointImpedence)
-        {
-            this.viscosity = viscosity;
-            this.damping = damping;
-            this.endpointImpedence = endpointImpedence;
-        }
+        public static Settings Default = new Settings();
     }
 
     private int _width;
@@ -43,14 +38,6 @@ public class FluidSimulation
         _heights = new float[width, width];
         _velocities = new float[width, width];
         _solid = new bool[width, width];
-        
-        for (int y = width/10; y < width; ++y)
-        {
-            for (int x = width/2; x < width*2/3; ++x)
-            {
-                _solid[x, y] = true;
-            }
-        }
     }
 
     public void AddWater(int x, int z, float amount)
@@ -61,6 +48,21 @@ public class FluidSimulation
     public float GetHeight(int x, int z)
     {
         return _heights[x, z];
+    }
+
+    public void SetHeight(int x, int z, float v)
+    {
+        _heights[x, z] = v;
+    }
+
+    public void SetVelocity(int x, int z, float v)
+    {
+        _velocities[x, z] = v;
+    }
+
+    public void SetSolid(int x, int z, bool s)
+    {
+        _solid[x, z] = s;
     }
 
     public void Update()
@@ -86,8 +88,10 @@ public class FluidSimulation
                     if (_solid[other_x,y])
                         continue;
 
+                    float mean = (_heights[other_x, y] + _heights[x, y]) / 2;
+                    float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * Mathf.Exp(-mean * _settings.shallownessScale);
                     float delta = _heights[other_x, y] - _heights[x, y];
-                    _velocities[x, y] += delta * _settings.viscosity;
+                    _velocities[x, y] += delta * viscosity;
                 }
                 for (int dy = -1; dy <= 1; dy += 2)
                 {
@@ -97,8 +101,10 @@ public class FluidSimulation
                     if (_solid[x,other_y])
                         continue;
 
+                    float mean = (_heights[x, other_y] + _heights[x, y]) / 2;
+                    float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * Mathf.Exp(-mean * _settings.shallownessScale);
                     float delta = _heights[x, other_y] - _heights[x, y];
-                    _velocities[x, y] += delta * _settings.viscosity;
+                    _velocities[x, y] += delta * viscosity;
                 }
             }
         }
@@ -113,6 +119,12 @@ public class FluidSimulation
             {
                 _heights[x, y] += _velocities[x, y];
                 _velocities[x, y] *= damp_mult;
+
+                if (_heights[x, y] < 0)
+                {
+                    _heights[x, y] = 0;
+                    _velocities[x, y] = 0;
+                }
             }
             
             _velocities[_width - 1, y] *= _settings.endpointImpedence;

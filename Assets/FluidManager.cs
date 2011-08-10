@@ -24,7 +24,17 @@ public class FluidManager : MonoBehaviour
         {
             for (int x = 0; x < width; ++x)
             {
-                _simulation.AddWater(x, y, 2.0f);
+                if ((y < width / 3 && x < width * 5 / 8) || (y > width * 2 / 3) || (x > width * 7 / 8)
+                    || ((x > width *  5/8 && y > width / 3 &&
+                         Mathf.Pow(((float)x/width - 5.0f/8) * 4, 2) +
+                         Mathf.Pow(((float)y / width - 1.0f/3) * 3, 2) > 1))
+                    || (x > width * 24/32 && x < width * 25/32 && y > width * 2/16 && y < width * 4/16)
+
+                    )
+                {
+                    _simulation.AddWater(x, y, 2.0f);
+                    _simulation.SetSolid(x, y, true);
+                }
             }
         }
         
@@ -33,7 +43,8 @@ public class FluidManager : MonoBehaviour
 
     void FixedUpdate()
     {
-        CreateWave();
+        //CreateWave();
+        DriveRiver();
         
         _simulation.Update();
     }
@@ -76,7 +87,6 @@ public class FluidManager : MonoBehaviour
         {
             height = 0;
         }
-
         else if (lambda < 1)
         {
             height = lambda;
@@ -96,5 +106,20 @@ public class FluidManager : MonoBehaviour
         }
         
         _simulation.AddWater(0, 0, height * 20);
+    }
+
+    void DriveRiver()
+    {
+        for (int y = width * 3 / 8; y < width * 5 / 8; ++y)
+        {
+            _simulation.AddWater(0, y, 2.0f);
+            //_simulation.SetHeight(0, y, 3.0f);
+            //_simulation.SetVelocity(0, y, 0.0f);
+        }
+        for (int x = width * 5 / 8; x < width * 7 / 8; ++x)
+        {
+            _simulation.SetHeight(x, 0, 0.0f);
+            _simulation.SetVelocity(x, 0, 0.0f);
+        }
     }
 }
