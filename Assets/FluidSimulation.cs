@@ -71,55 +71,48 @@ public class FluidSimulation
         UpdatePositions();
     }
 
+    void UpdateNeighbour(int x, int y, int dx, int dy)
+    {
+        int other_x = x + dx;
+        int other_y = y + dy;
+        if (other_x < 0 || other_x >= _width || other_y < 0 || other_y >= _width)
+            return;
+        if (_solid[other_x, other_y])
+            return;
+        
+        float mean = (_heights[other_x, other_y] + _heights[x, y]) / 2;
+        float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * Mathf.Exp(-mean * _settings.shallownessScale);
+        float delta = _heights[other_x, other_y] - _heights[x, y];
+        _velocities[x, y] += delta * viscosity;
+    }
+
     void UpdateVelocities()
     {
         for (int y = 0; y < _width; ++y)
         {
             for (int x = 0; x < _width; ++x)
             {
-                if (_solid[x,y])
+                if (_solid[x, y])
                     continue;
 
-                for (int dx = -1; dx <= 1; dx += 2)
-                {
-                    int other_x = x + dx;
-                    if (other_x < 0 || other_x >= _width)
-                        continue;
-                    if (_solid[other_x,y])
-                        continue;
-
-                    float mean = (_heights[other_x, y] + _heights[x, y]) / 2;
-                    float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * Mathf.Exp(-mean * _settings.shallownessScale);
-                    float delta = _heights[other_x, y] - _heights[x, y];
-                    _velocities[x, y] += delta * viscosity;
-                }
-                for (int dy = -1; dy <= 1; dy += 2)
-                {
-                    int other_y = y + dy;
-                    if (other_y < 0 || other_y >= _width)
-                        continue;
-                    if (_solid[x,other_y])
-                        continue;
-
-                    float mean = (_heights[x, other_y] + _heights[x, y]) / 2;
-                    float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * Mathf.Exp(-mean * _settings.shallownessScale);
-                    float delta = _heights[x, other_y] - _heights[x, y];
-                    _velocities[x, y] += delta * viscosity;
-                }
+                UpdateNeighbour(x, y, 1, 0);
+                UpdateNeighbour(x, y, -1, 0);
+                UpdateNeighbour(x, y, 0, 1);
+                UpdateNeighbour(x, y, 0, -1);
             }
         }
     }
 
     void UpdatePositions()
     {
-        float damp_mult = 1 - Mathf.Pow(_settings.damping/100, 2);
+        float damp_mult = 1 - Mathf.Pow(_settings.damping / 100, 2);
         for (int y = 0; y < _width; ++y)
         {
             for (int x = 0; x < _width; ++x)
             {
                 _heights[x, y] += _velocities[x, y];
                 _velocities[x, y] *= damp_mult;
-
+                
                 if (_heights[x, y] < 0)
                 {
                     _heights[x, y] = 0;
