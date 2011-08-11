@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections;
 
-public class FluidSimulation
+public class FluidSimulation : IFluidSimulation
 {
     [Serializable]
     public class Settings
@@ -81,7 +81,10 @@ public class FluidSimulation
             return;
         
         float mean = (_heights[other_x, other_y] + _heights[x, y]) / 2;
-        float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * Mathf.Exp(-mean * _settings.shallownessScale);
+
+        float lambda = 1 - mean / _settings.shallownessScale;
+        if (lambda < 0) lambda = 0;
+        float viscosity = _settings.viscosity + (_settings.shallowViscosity - _settings.viscosity) * lambda;
         float delta = _heights[other_x, other_y] - _heights[x, y];
         _velocities[x, y] += delta * viscosity;
     }

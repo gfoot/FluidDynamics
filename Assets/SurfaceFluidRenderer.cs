@@ -3,10 +3,10 @@ using System.Collections;
 
 public class SurfaceFluidRenderer : FluidRenderer
 {
-    FluidSimulation _simulation;
+    IFluidSimulation _simulation;
     Mesh _mesh;
 
-    public override void Init(FluidSimulation simulation)
+    public override void Init(IFluidSimulation simulation)
     {
         _simulation = simulation;
         _mesh = new Mesh();

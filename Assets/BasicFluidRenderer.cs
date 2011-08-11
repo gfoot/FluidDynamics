@@ -3,11 +3,11 @@ using System.Collections;
 
 public class BasicFluidRenderer : FluidRenderer
 {
-    private FluidSimulation _simulation;
+    private IFluidSimulation _simulation;
 
     private Transform[] _transforms;
 
-    public override void Init(FluidSimulation simulation)
+    public override void Init(IFluidSimulation simulation)
     {
         _simulation = simulation;
 
