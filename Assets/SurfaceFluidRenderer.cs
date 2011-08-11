@@ -26,7 +26,7 @@ public class SurfaceFluidRenderer : FluidRenderer
             for (int x = 0; x < _simulation.Width; ++x)
             {
                 int vbase = x + y * _simulation.Width;
-                newVertices[vbase] = new Vector3(0, 0, 0);
+                newVertices[vbase] = new Vector3(x, 0, y);
                 newUV[vbase] = new Vector2(0, 0);
                 newNormals[vbase] = new Vector3(0, 1, 0);
             }
@@ -51,6 +51,8 @@ public class SurfaceFluidRenderer : FluidRenderer
         _mesh.uv = newUV;
         _mesh.normals = newNormals;
         _mesh.triangles = indices;
+
+        _mesh.RecalculateBounds();
     }
 
     void LateUpdate()
